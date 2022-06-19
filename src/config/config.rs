@@ -28,14 +28,17 @@ pub struct Config {
     /// The output path of the torrents.
     output_path: Option<String>,    
     /// Whether or not to strip public trackers from cross-seed torrents.
+    #[serde(default)]
     strip_public: bool,
     /// When running as script we exit the program after finishing. In daemon mode we run it at set intervals.
     run_mode: RunMode,
     /// When running as inject we inject torrents cross-seed has found directly into the client, when running as search we populate the output folder.
     torrent_mode: TorrentMode,
     /// Whether to cache using an external db (ie regis) or don't cache.
+    #[serde(default)]
     use_cache: bool,
     /// Whether to keep the original torrent file and create a new one for cross-seed or delete original and upload cross-seed
+    #[serde(default)]
     replace_torrents: bool,
 
     //pub indexers: HashMap<String, Indexer>,
@@ -123,5 +126,12 @@ impl Config {
 
     pub fn output_path_str(&self) -> Option<&String> {
         self.output_path.as_ref()
+    }
+
+    pub fn run_mode(&self) -> RunMode {
+        self.run_mode.unwrap_or(RunMode::Script)
+    }
+    pub fun torrent_mode(&self) -> TorrentMode {
+        self.torrent_mode.unwrap_or(TorrentMode::Search)
     }
 }
