@@ -2,6 +2,7 @@ mod config;
 mod torznab;
 
 use config::Config;
+use lava_torrent::bencode::BencodeElem;
 use tracing::{info, Level, debug};
 
 use std::path::{Path, PathBuf};
@@ -64,8 +65,6 @@ async fn main() {
     let torrent_files = read_torrents(config.torrents_path()).unwrap();
     info!("Found {} torrents", torrent_files.len());
 
-    //panic!("rhfhujergfre");
-
     // Convert the indexers to be async friendly.
     let mut indexers = indexers.iter()
         .map(|indexer| Arc::new(RwLock::new(indexer.clone())))
@@ -74,8 +73,19 @@ async fn main() {
     let mut indexer_handles = vec![];
 
     for torrent_path in torrent_files.iter() {
-        let torrent = Arc::new(Torrent::read_from_file(torrent_path).unwrap());
-        info!("{}:", torrent.name);
+        let torrent = Torrent::read_from_file(torrent_path).unwrap();
+
+        // To check for private torrents
+        /* if let Some(extra_info) = &torrent.extra_info_fields {
+            if let Some(BencodeElem::Integer(is_private)) = extra_info.get("private") {
+                if *is_private == 1 {
+                    
+                }
+            }
+        } */
+
+        let torrent = Arc::new(torrent);
+        //info!("{}:", torrent.name);
 
         for indexer in indexers.iter() {
             let mut indexer = Arc::clone(indexer);
@@ -87,7 +97,9 @@ async fn main() {
                         let generic = GenericSearchParametersBuilder::new()
                             .query(torrent.name.clone())
                             .build();
-                        client.search(SearchFunction::Search, generic).await.unwrap();
+                        let results = client.search(SearchFunction::Search, generic).await.unwrap();
+
+                        //println!("Results: {:?}", results);
                     },
                     None => {
                         panic!("idfk");
