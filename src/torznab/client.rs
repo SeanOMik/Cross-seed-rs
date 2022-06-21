@@ -81,7 +81,7 @@ impl TorznabClient {
     }
 
     /// Search for torrents.
-    pub async fn search(&self, func: SearchFunction, generic_params: GenericSearchParameters) -> Result<(), ClientError> {
+    pub async fn search(&self, func: SearchFunction, generic_params: GenericSearchParameters) -> Result<Vec<TorrentResult>, ClientError> {
         let param_str = format!("{}{}", func.to_params(), generic_params.to_params());
 
         let bytes = self.request(param_str).await?;
@@ -91,13 +91,9 @@ impl TorznabClient {
         let items = channel.into_items();
 
         let torrents: Vec<TorrentResult> = items.iter()
-            .map(TorrentResult::from_item)
+            .map(|i| TorrentResult::from_item(i.clone()))
             .collect::<Result<Vec<TorrentResult>, super::ResultError>>()?;
 
-        debug!("Found results: {:?}", torrents);
-
-        //Torrent::from
-
-        Ok(())
+        Ok(torrents)
     }
 }

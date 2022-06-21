@@ -7,23 +7,23 @@ pub enum ResultError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct TorrentResult<'a> {
-    name: &'a str,
-    link: &'a str,
+pub struct TorrentResult {
+    name: String,
+    link: String,
     /* size: u64,
     categories: Vec<u32>, */
 }
 
-impl<'a> TorrentResult<'a> {
-    pub fn from_item(item: &'a Item) -> Result<Self, ResultError> {
+impl TorrentResult {
+    pub fn from_item(item: Item) -> Result<Self, ResultError> {
         let name = item.title().ok_or(ResultError::MissingTitle)?;
         let link = item.link().ok_or(ResultError::MissingLink)?;
         /* let size = item.enclosure().map(|e| e.length().parse::<u64>());
         let categories = item.categories().ok_or(ResultError::MissingTitle)?; */
 
         Ok(TorrentResult {
-            name,
-            link,
+            name: String::from(name.clone()),
+            link: String::from(link),
             /* size,
             categories, */
         })
