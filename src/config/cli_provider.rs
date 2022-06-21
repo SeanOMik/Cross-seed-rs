@@ -46,10 +46,14 @@ impl Provider for CliProvider {
             // TODO: Parse _args as booleans
             let (_args, argv) = argmap::parse(args.iter());
 
+            let mut dict = Dict::new();
             let mut tree = ArgumentTree::new();
             for (key, vals) in argv {
                 let len = vals.len();
                 if len == 0 {
+                    // This is usually where booleans are given (use_cache, replace_torrents, etc.)
+                    dict.insert(key, Value::Bool(Tag::Default, true));
+
                     continue;
                 }
 
@@ -71,7 +75,9 @@ impl Provider for CliProvider {
                 tree.insert(&mut key_iter, val);
             }
 
-            Ok(tree.to_dict())
+            dict.append(&mut tree.to_dict());
+
+            Ok(dict)
         }
 
         match &self.profile {
