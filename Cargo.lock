@@ -46,6 +46,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-recursion"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2cda8f4bcc10624c4e85bc66b3f452cca98cfa5ca002dc83a16aad2367641bea"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "atom_syndication"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -191,6 +202,7 @@ name = "cross-seed"
 version = "0.1.0"
 dependencies = [
  "argmap",
+ "async-recursion",
  "bytes 1.1.0",
  "figment",
  "futures 0.3.21",
@@ -820,8 +832,7 @@ dependencies = [
 [[package]]
 name = "magnet-url"
 version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ac3b4c4004e88aca00cc0c60782e5642c8fc628deca19e530ce58aa76e737d74"
+source = "git+https://github.com/SeanOMik/magnet-url-rs.git?branch=main#9e1bf9a9a85e83b99b10c8475b0a4a10e6d897e8"
 dependencies = [
  "lazy_static",
  "regex",
