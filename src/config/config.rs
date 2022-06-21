@@ -9,39 +9,33 @@ use crate::torznab::TorznabClient;
 
 use super::CliProvider;
 
-#[derive(Debug, Clone)]
-pub enum RunMode {
-    Script,
-    Daemon,
-}
-
-#[derive(Debug, Clone)]
-pub enum TorrentMode { 
-    Inject,
-    Search,
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct Config {
     /// The path of the torrents to search.
     torrents_path: String,
+    
     /// The output path of the torrents.
-    output_path: Option<String>,    
-    /// Whether or not to strip public trackers from cross-seed torrents.
-    #[serde(default)]
-    strip_public: bool,
+    output_path: Option<String>,
+    
     /// When running as script we exit the program after finishing. In daemon mode we run it at set intervals.
-    run_mode: RunMode,
+    #[serde(default)]
+    pub run_mode: RunMode,
+    
     /// When running as inject we inject torrents cross-seed has found directly into the client, when running as search we populate the output folder.
-    torrent_mode: TorrentMode,
+    #[serde(default)]
+    pub torrent_mode: TorrentMode,
+
     /// Whether to cache using an external db (ie regis) or don't cache.
     #[serde(default)]
-    use_cache: bool,
+    pub use_cache: bool,
+    
     /// Whether to keep the original torrent file and create a new one for cross-seed or delete original and upload cross-seed
     #[serde(default)]
-    replace_torrents: bool,
+    pub replace_torrents: bool,
 
-    //pub indexers: HashMap<String, Indexer>,
+    /// Whether or not to strip public trackers from cross-seed torrents.
+    #[serde(default)]
+    pub strip_public: bool,
 
     /// Used for deserializing the indexers into a Vec<Indexer>.
     #[serde(rename = "indexers")]
@@ -50,6 +44,30 @@ pub struct Config {
     /// The indexers to search.
     #[serde(skip)]
     pub indexers: Vec<Indexer>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum RunMode {
+    Script,
+    Daemon,
+}
+
+impl Default for RunMode {
+    fn default() -> Self {
+        RunMode::Script
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum TorrentMode { 
+    Inject,
+    Search,
+}
+
+impl Default for TorrentMode {
+    fn default() -> Self {
+        TorrentMode::Inject
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -81,7 +99,7 @@ impl Indexer {
 // Allow dead code for functions. We should probably remove this later on.
 #[allow(dead_code)]
 impl Config {
-    pub fn new() -> Config {
+    pub fn new() -> Self {
         // The path of the config file without the file extension
         let path = match env::var("CROSS_SEED_CONFIG") {
             Ok(path) => path,
@@ -113,7 +131,7 @@ impl Config {
         Path::new(&self.torrents_path)
     }
 
-    pub fn torrents_path_str(&self) -> &String {
+    pub fn torrents_path_str(&self) -> &str {
         &self.torrents_path
     }
 
@@ -126,12 +144,5 @@ impl Config {
 
     pub fn output_path_str(&self) -> Option<&String> {
         self.output_path.as_ref()
-    }
-
-    pub fn run_mode(&self) -> RunMode {
-        self.run_mode.unwrap_or(RunMode::Script)
-    }
-    pub fun torrent_mode(&self) -> TorrentMode {
-        self.torrent_mode.unwrap_or(TorrentMode::Search)
     }
 }
