@@ -8,7 +8,7 @@ use tracing::{info, Level, debug};
 use std::path::{Path, PathBuf};
 use std::error::Error;
 
-use lava_torrent::torrent::v1::Torrent;
+use lava_torrent::torrent::v1::{Torrent, AnnounceList};
 
 use crate::torznab::{GenericSearchParameters, SearchFunction};
 use crate::torznab::search_parameters::{GenericSearchParametersBuilder, MovieSearchParametersBuilder};
@@ -46,7 +46,7 @@ async fn main() {
 
     // Get config and debug the torrents
     let config = Config::new();
-    info!("Searching torrents in: {}", config.torrents_path_str());
+    info!("Searching for torrents in: {}", config.torrents_path_str());
 
     let mut indexers = config.indexers.clone();
 
@@ -62,6 +62,7 @@ async fn main() {
         debug!("    Can Search: {:?}", indexer.client.as_ref().unwrap().capabilities.searching_capabilities);
     }
 
+    // Log the amount of torrents.
     let torrent_files = read_torrents(config.torrents_path()).unwrap();
     info!("Found {} torrents", torrent_files.len());
 
@@ -77,6 +78,8 @@ async fn main() {
         let torrent = Arc::new(torrent);
 
         for indexer in indexers.iter() {
+            info!("Checking for \"{}\"", torrent.name);
+
             let mut indexer = Arc::clone(indexer);
             let torrent = Arc::clone(&torrent);
             indexer_handles.push(tokio::spawn(async move {
@@ -88,7 +91,46 @@ async fn main() {
                             .build();
                         let results = client.search(SearchFunction::Search, generic).await.unwrap();
 
-                        //println!("Results: {:?}", results);
+                        // The first result should be the correct one.
+                        if let Some(result) = results.first() {
+                            let found_torrent = result.download_torrent().await.unwrap();
+
+                            if let Some(found_announces) = &found_torrent.announce_list {
+                                // Some urls can be encoded so we need to decode to compare them.
+                                let found_announces: Vec<Vec<String>> = found_announces.iter()
+                                    .map(|a_list| a_list.iter().map(|a| urlencoding::decode(a).unwrap().to_string()).collect::<Vec<String>>())
+                                    .collect();
+
+                                if let Some(torrent_announces) = &torrent.announce_list {
+                                    let mut found_announces_flat: Vec<&String> = Vec::new();
+                                    for i in found_announces.iter() {
+                                        for j in i.iter() {
+                                            found_announces_flat.push(j);
+                                        }
+                                    }
+
+                                    let mut flat_announces: Vec<&String> = Vec::new();
+                                    for i in torrent_announces.iter() {
+                                        for j in i.iter() {
+                                            flat_announces.push(j);
+                                        }
+                                    }
+
+                                    // Check if the announce urls from the found torrent are in the one
+                                    // that is on the file system.
+                                    let mut in_tracker = true;
+                                    for found_url in found_announces_flat.iter() {
+                                        in_tracker = in_tracker && flat_announces.contains(found_url);
+                                    }
+
+                                    if !in_tracker {
+                                        info!("Found a cross-seedable torrent for {}", found_torrent.name);
+                                    } else {
+                                        debug!("Found the torrent in its original indexer, skipping...");
+                                    }
+                                }
+                            }
+                        }
                     },
                     None => {
                         panic!("idfk");
