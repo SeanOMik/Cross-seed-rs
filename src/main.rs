@@ -74,18 +74,7 @@ async fn main() {
 
     for torrent_path in torrent_files.iter() {
         let torrent = Torrent::read_from_file(torrent_path).unwrap();
-
-        // To check for private torrents
-        /* if let Some(extra_info) = &torrent.extra_info_fields {
-            if let Some(BencodeElem::Integer(is_private)) = extra_info.get("private") {
-                if *is_private == 1 {
-                    
-                }
-            }
-        } */
-
         let torrent = Arc::new(torrent);
-        //info!("{}:", torrent.name);
 
         for indexer in indexers.iter() {
             let mut indexer = Arc::clone(indexer);
