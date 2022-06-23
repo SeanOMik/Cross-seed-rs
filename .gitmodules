@@ -1,0 +1,3 @@
+[submodule "abstracttorrent"]
+	path = abstracttorrent
+	url = https://github.com/SeanOMik/abstracttorrent.git
