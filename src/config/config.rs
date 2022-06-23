@@ -9,7 +9,11 @@ use crate::torznab::TorznabClient;
 
 use super::CliProvider;
 
-#[derive(Deserialize, Serialize)]
+fn default_bool_true() -> bool {
+    true
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     /// The path of the torrents to search.
     torrents_path: String,
@@ -28,14 +32,13 @@ pub struct Config {
     /// Whether to cache using an external db (ie regis) or don't cache.
     #[serde(default)]
     pub use_cache: bool,
-    
-    /// Whether to keep the original torrent file and create a new one for cross-seed or delete original and upload cross-seed
-    #[serde(default)]
-    pub replace_torrents: bool,
 
     /// Whether or not to strip public trackers from cross-seed torrents.
     #[serde(default)]
-    pub strip_public: bool,
+    pub strip_public_trackers: bool,
+
+    /// The category of added cross-seed torrents.
+    torrent_category: Option<String>,
 
     /// Used for deserializing the indexers into a Vec<Indexer>.
     #[serde(rename = "indexers")]
@@ -44,11 +47,16 @@ pub struct Config {
     /// The indexers to search.
     #[serde(skip)]
     pub indexers: Vec<Indexer>,
+
+    /// Config section for qbittorrent client
+    pub qbittorrent: Option<super::client::qbittorrent::QBittorrentConfig>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum RunMode {
+    #[serde(alias = "script")]
     Script,
+    #[serde(alias = "daemon")]
     Daemon,
 }
 
@@ -60,13 +68,25 @@ impl Default for RunMode {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum TorrentMode { 
-    Inject,
-    Search,
+    /// Inject a found torrent's trackers into the torrent being downloaded
+    /// by the client.
+    #[serde(alias = "inject_trackers", alias = "injecttrackers")]
+    InjectTrackers,
+
+    /// Upload the torrent file to the torrent client. This will cause there
+    /// to be two uploading torrents on the client. One which is found by cross-seed
+    /// and the other which was imported by the user or another application.
+    #[serde(alias = "inject_file", alias = "injectfile")]
+    InjectFile,
+    
+    /// Cross-seeded torrents will be stored in the filesystem.
+    #[serde(alias = "search")]
+    Filesystem,
 }
 
 impl Default for TorrentMode {
     fn default() -> Self {
-        TorrentMode::Inject
+        TorrentMode::InjectTrackers
     }
 }
 
@@ -144,5 +164,11 @@ impl Config {
 
     pub fn output_path_str(&self) -> Option<&String> {
         self.output_path.as_ref()
+    }
+
+    pub fn torrent_category(&self) -> String {
+        self.torrent_category.as_ref()
+            .unwrap_or(&String::from("cross-seed-rs"))
+            .clone()
     }
 }
