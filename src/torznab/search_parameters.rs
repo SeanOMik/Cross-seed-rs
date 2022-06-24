@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct GenericSearchParameters {
     /// The string search query.
     pub query: Option<String>,
@@ -15,6 +15,10 @@ pub struct GenericSearchParameters {
 }
 
 impl GenericSearchParameters {
+    pub fn builder() -> GenericSearchParametersBuilder {
+        GenericSearchParametersBuilder::default()
+    }
+
     /// Convert the search parameters to a query string.
     /// This will be prefixed with "&"
     pub fn to_params(&self) -> String {
@@ -56,24 +60,12 @@ impl GenericSearchParameters {
     }
 }
 
+#[derive(Debug, Default)]
 pub struct GenericSearchParametersBuilder {
     params: GenericSearchParameters,
 }
 
 impl GenericSearchParametersBuilder {
-    pub fn new() -> GenericSearchParametersBuilder {
-        GenericSearchParametersBuilder {
-            params: GenericSearchParameters {
-                query: None,
-                categories: Vec::new(),
-                attributes: Vec::new(),
-                extended: None,
-                offset: None,
-                limit: None,
-            },
-        }
-    }
-
     pub fn query(mut self, query: String) -> GenericSearchParametersBuilder {
         self.params.query = Some(query);
         self

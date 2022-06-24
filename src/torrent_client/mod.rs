@@ -1,6 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use abstracttorrent::{client::qbittorrent, torrent::TorrentInfo, common::GetTorrentListParams};
+use lava_torrent::torrent::v1::Torrent;
 
 use crate::config::Config;
 
@@ -34,17 +35,25 @@ impl TorrentClient {
         self.client.login(&url, username, password).await
     }
 
-    /* pub fn login_with_config(&self, config: &Config) -> abstracttorrent::client::ClientResult<()> {
-        self.login(url, username, password)
-    } */
-
-    pub async fn get_torrent_info(&self, torrent: &lava_torrent::torrent::v1::Torrent) -> abstracttorrent::client::ClientResult<Option<TorrentInfo>> {
+    /// Gets a torrent's info from the client.
+    pub async fn get_torrent_info(&self, torrent: &Torrent) -> abstracttorrent::client::ClientResult<Option<TorrentInfo>> {
         let params = GetTorrentListParams::builder()
             .hash(&torrent.info_hash())
             .build();
 
         let results = self.client.get_torrent_list(Some(params)).await?;
         Ok(results.first().cloned())
+    }
+
+    /// Checks if the client has the torrent with the exact hash, no like torrents.
+    pub async fn has_exact_torrent(&self, torrent: &Torrent) -> abstracttorrent::client::ClientResult<bool> {
+        let params = GetTorrentListParams::builder()
+            .hash(&torrent.info_hash())
+            .build();
+
+        let results = self.client.get_torrent_list(Some(params)).await?;
+
+        Ok(results.iter().any(|info| info.hash == torrent.info_hash()))
     }
 }
 
