@@ -1,4 +1,5 @@
 use serde::{Deserialize,Serialize};
+use tracing::metadata::LevelFilter;
 use std::path::Path;
 use std::env;
 use std::collections::HashMap;
@@ -6,6 +7,7 @@ use figment::{Figment, providers::{Format, Toml, Env}};
 use figment::value::Value as FigmentValue;
 
 use crate::torznab::TorznabClient;
+use crate::indexer::Indexer;
 
 use super::CliProvider;
 
@@ -36,6 +38,9 @@ pub struct Config {
     /// Whether or not to strip public trackers from cross-seed torrents.
     #[serde(default)]
     pub strip_public_trackers: bool,
+
+    #[serde(default)]
+    pub log_level: LogLevel,
 
     /// The category of added cross-seed torrents.
     torrent_category: Option<String>,
@@ -91,28 +96,42 @@ impl Default for TorrentMode {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct Indexer {
-    #[serde(skip_deserializing)]
-    /// Name of the indexer
-    pub name: String,
-    /// Whether the indexer is enabled or not for searching
-    pub enabled: Option<bool>,
-    /// URL to query for searches
-    pub url: String,
-    /// API key to pass to prowlarr/jackett
-    pub api_key: String,
-
-    #[serde(skip)]
-    pub client: Option<TorznabClient>,
+pub enum LogLevel {
+    #[serde(alias = "error")]
+    Error,
+    
+    #[serde(alias = "warn")]
+    Warn,
+    
+    #[serde(alias = "info")]
+    Info,
+    
+    #[serde(alias = "debug")]
+    Debug,
+    
+    #[serde(alias = "trace")]
+    Trace,
+    
+    #[serde(alias = "off", alias = "disabled")]
+    Off,
 }
 
-impl Indexer {
-    pub async fn create_client(&mut self) -> Result<&TorznabClient, crate::torznab::ClientError> {
-        if self.client.is_none() {
-            self.client = Some(TorznabClient::new(self.name.clone(), &self.url, &self.api_key).await?);
-        }
+impl Default for LogLevel {
+    fn default() -> Self {
+        Self::Info
+    }
+}
 
-        Ok(self.client.as_ref().unwrap())
+impl Into<LevelFilter> for LogLevel {
+    fn into(self) -> LevelFilter {
+        match self {
+            LogLevel::Error => LevelFilter::ERROR,
+            LogLevel::Warn => LevelFilter::WARN,
+            LogLevel::Info => LevelFilter::INFO,
+            LogLevel::Debug => LevelFilter::DEBUG,
+            LogLevel::Trace => LevelFilter::TRACE,
+            LogLevel::Off => LevelFilter::OFF,
+        }
     }
 }
 
