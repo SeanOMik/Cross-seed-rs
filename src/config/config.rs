@@ -140,18 +140,30 @@ impl Into<LevelFilter> for LogLevel {
 impl Config {
     pub fn new() -> Self {
         // The path of the config file without the file extension
-        let path = match env::var("CROSS_SEED_CONFIG") {
-            Ok(path) => path,
-            Err(_) => "config".to_string(),
+        let path = {
+            let args: Vec<String> = wild::args().collect();
+            let (_args, argv) = argmap::parse(args.iter());
+
+            match argv.get("--config-path") {
+                Some(path) => { 
+                    println!("config path: {:?}", path);
+                    path.first().unwrap().clone()
+                },
+                None => match env::var("CROSS_SEED_CONFIG") {
+                    Ok(path) => path,
+                    Err(_) => "config.toml".to_string(),
+                }
+            }
         };
 
         // TODO: Create a command line argument `Provider` (https://docs.rs/figment/0.10.6/figment/trait.Provider.html)
         // TODO: Figure out priority
+
         // Merge the config files
         let figment = Figment::new()
             .join(CliProvider::new())
             .join(Env::prefixed("CROSS_SEED_"))
-            .join(Toml::file(format!("{}.toml", path)));
+            .join(Toml::file(format!("{}", path)));
 
         let mut config: Config = figment.extract().unwrap();
 
