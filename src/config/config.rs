@@ -3,7 +3,7 @@ use tracing::metadata::LevelFilter;
 use std::path::Path;
 use std::env;
 use std::collections::HashMap;
-use figment::{Figment, providers::{Format, Toml, Env}};
+use figment::{Figment, providers::{Format, Yaml, Env}};
 use figment::value::Value as FigmentValue;
 
 use crate::torznab::TorznabClient;
@@ -45,12 +45,7 @@ pub struct Config {
     /// The category of added cross-seed torrents.
     torrent_category: Option<String>,
 
-    /// Used for deserializing the indexers into a Vec<Indexer>.
-    #[serde(rename = "indexers")]
-    indexers_map: HashMap<String, FigmentValue>,
-
     /// The indexers to search.
-    #[serde(skip)]
     pub indexers: Vec<Indexer>,
 
     /// Config section for qbittorrent client
@@ -163,17 +158,9 @@ impl Config {
         let figment = Figment::new()
             .join(CliProvider::new())
             .join(Env::prefixed("CROSS_SEED_"))
-            .join(Toml::file(format!("{}", path)));
+            .join(Yaml::file(format!("{}", path)));
 
         let mut config: Config = figment.extract().unwrap();
-
-        // Parse the indexers map into a vector.
-        for (name, value) in &mut config.indexers_map {
-            let mut indexer: Indexer = value.deserialize().unwrap();
-            indexer.name = name.to_owned();
-
-            config.indexers.push(indexer);
-        }
 
         config
     }

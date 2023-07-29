@@ -8,11 +8,11 @@ use crate::torznab::{TorznabClient, GenericSearchParameters, SearchFunction};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Indexer {
-    #[serde(skip_deserializing)]
     /// Name of the indexer
     pub name: String,
     /// Whether the indexer is enabled or not for searching
-    pub enabled: Option<bool>,
+    #[serde(default = "crate::util::bool_true")]
+    pub enabled: bool,
     /// URL to query for searches
     pub url: String,
     /// API key to pass to prowlarr/jackett

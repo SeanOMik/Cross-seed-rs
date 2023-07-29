@@ -3,6 +3,7 @@ mod torznab;
 mod torrent_client;
 mod indexer;
 mod cross_seed;
+mod util;
 
 use config::Config;
 
